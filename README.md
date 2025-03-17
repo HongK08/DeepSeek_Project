@@ -149,3 +149,25 @@ LLM을 학습시키는 방법은 지도학습/보강학습/보상학습 등의 �
 하지만 이번 파인튜닝에서 사용할 부분은 지도학습 입니다. 즉 기본 DataSet에 가져온 Data를 Push 하여 Prompt를 주는 상황에서의 답을 더 정확하게 만드는 행위 입니다.<br/>
 이를 위해서 우리는 HuggingFace 라는 Ai 플랫폼을 활용 할 것이며 이곳에서 디스틸 된 모델을 다운받고 거기에 원하는 1차 데이터셋을 튜닝 + 딥시크의 부족한 언어 성능을 한국어 셋으로 튜닝<br/>
 그 이후에 한국 의료정보와 기타 필요한 DataSet을 Turning 후에 이를 Quant 하여 최종 모델 축소까지를 목표로 하는 프로젝트입니다<br/>
+
+1. 사용을 위한 한국어 데이터셋의 불러오기 과정 코드
+   
+        import os
+        import pandas as pd
+        
+        dir_path = './kor_eng' # 엑셀 파일이 저장된 디렉터리
+        files = os.listdir(dir_path)
+        print(files)
+        
+        merge_df = pd.DataFrame()
+        
+        for file in files:
+            df = pd.read_excel(f'{dir_path}/{file}')
+            df = df[['원문', '번역문']]
+            merge_df = pd.concat([merge_df, df])
+        
+        merge_df.columns = ['ko', 'en']
+        merge_df.to_csv('./dataset.csv', index=False)
+
+해당 코드를 사용하기 전에 우선 AI허브에서 원하는 번역 파일을 다운 받아야만 합니다. <br/><br/>
+https://www.aihub.or.kr/aihubdata/data/view.do?currMenu=115&topMenu=100&aihubDataSe=data&dataSetSn=126 <br/>

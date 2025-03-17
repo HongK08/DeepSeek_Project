@@ -352,7 +352,7 @@ import wandb
 from transformers import Trainer, TrainingArguments
 from torch.utils.data import Dataset
 
-# wandb 비활성화
+#wandb 비활성화
 os.environ["WANDB_DISABLED"] = "true"
 wandb.init(mode="disabled")
 

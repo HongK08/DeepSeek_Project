@@ -6,7 +6,8 @@
 3. 사용하게 되는 Model 은 DeepSeek-R1-Distill-Qwen-32B-unsloth-bnb-4bit 이며 해당 모델은 R1의 증류 모델이고 32B이며 4Bit 양자화가 된 모델이라는 뜻임
 
 # DeepSeek R1 정리
-DeepSeek의 추론엔진 
+DeepSeek의 추론엔진  
+
 https://arxiv.org/pdf/2502.07316
 흔히 아는 LLM의 추론 방식은 총 두가지임
 수학문제 데이터 : 문제를 주고 이를 수학적으로 추론해가며 과정을 학습
@@ -42,7 +43,9 @@ def factorial(n):
     return n * factorial(n-1)
 
 print(factorial(3))
+
 이걸 자연어로 이해시킨다고 생각하면
+
 factorial(3)을 호출한다.
 3 != 0이므로, 3 * factorial(2)을 계산해야 한다.
 factorial(2)을 호출한다.

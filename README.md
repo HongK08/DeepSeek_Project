@@ -184,7 +184,8 @@ https://www.aihub.or.kr/aihubdata/data/view.do?currMenu=115&topMenu=100&aihubDat
     이후 transformers, wandb 등을 설치하며 llama.cpp는 github 공식 라이브러리 참고하시어 설치하십시오.  
     Huggingface도 마찬가지 입니다. 물론 가장 기초적인 Torch는 서버 설정 메뉴얼 참고하셔야 합니다.  
    
-2. 이후 설정이 되셨다면 HF(HuggingFace) 로그인을 하셔야 합니다. 이때 HF에 가입하시고 개인 토큰 키 발급받으셔야 진행 가능합니다.
+2. 이후 설정이 되셨다면  
+    HF(HuggingFace) 로그인을 하셔야 합니다. 이때 HF에 가입하시고 개인 토큰 키 발급받으셔야 진행 가능합니다.
     Token 으로 login 호출하셔서 다음 seq 길이의 지정 dtype 등 지정과 load_in_4bit 은 사용하시는 모델에 따라 지정하십시오.
     튜닝 전 prompt_style 지정해서 튜닝 전 결과값 보셔도 좋습니다. 이때 지정된 인스트럭션 질문 답변 등 형식을 유지하십시오.
     그리고 질문을 주면 얘가 답변을 해 줄겁니다 기본적인 LLM 내에서 정제 된 R1이 주는 답변입니다.

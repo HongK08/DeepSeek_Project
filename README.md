@@ -11,7 +11,7 @@
 # 참조한 논문
 https://arxiv.org/pdf/2502.07316
 https://arxiv.org/html/2412.19437v1#S3
-https://newsletter.maartengrootendorst.com/p/a-visual-guide-to-reasoning-llms
+https://newsletter.maartengrootendorst.com/p/a-visual-guide-to-reasoning-llms 
 
 # DeepSeek R1 정리
 DeepSeek의 추론엔진  

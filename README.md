@@ -6,7 +6,7 @@
 3. 사용하게 되는 Model 은 DeepSeek-R1-Distill-Qwen-32B-unsloth-bnb-4bit 이며 해당 모델은 R1의 증류 모델이고 32B이며 4Bit 양자화가 된 모델이라는 뜻임
 
 
-#참조한 논문
+# 참조한 논문
 https://arxiv.org/pdf/2502.07316
 
 # DeepSeek R1 정리

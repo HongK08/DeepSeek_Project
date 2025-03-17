@@ -45,6 +45,7 @@ Code i/o 를 이용하여 코드에 내제된 다양한 추론 패턴을 체계�
             if n == 0:
                 return 1
             return n * factorial(n-1)
+            
     print(factorial(3))
 
 이걸 자연어로 이해시킨다고 생각해야 합니다 이는 하단의 글처럼 풀이가 가능합니다.
@@ -63,16 +64,17 @@ factorial(0)을 호출한다.
 
 이를 통하여 모델이 코드의 구문에 얽매이지 않은 채 논리적 흐름 계획, 상태 공간 탐색,의사 결정 트리 순회, 모듈식 분해 등의 범용 추론 능력을 학습이 가능해지는 이야기 입니다.
 
-그래프로 보자
-        ROOT
-         |
-       [x < 5]
-       /    \
-   YES      NO
-   /         \
-[x < 3]      [x < 8]
- /    \      /    \
-A      B    C      D
+그림으로 설명합니다.
+
+            ROOT
+             |
+           [x < 5]
+           /    \
+       YES      NO
+       /         \
+    [x < 3]      [x < 8]
+     /    \      /    \
+    A      B    C      D
 
 DFS/BFS 같은 순회
 Root → Left → Left (A) → Backtrack → Right (B) → Backtrack → Right (C) → Right (D)

@@ -231,14 +231,14 @@ https://www.aihub.or.kr/aihubdata/data/view.do?currMenu=115&topMenu=100&aihubDat
     from huggingface_hub import login
     from getpass import getpass
     
-    # 토큰 입력 (비밀번호처럼 입력됨)
+    #토큰 입력 (비밀번호처럼 입력됨)
     hf_token = '<YOUR_TOKEN>'
     login(token=hf_token) #귀찮아서 그냥 강제로 지정해버렸습니다.
 
-    # 모델 로드
+    #모델 로드
     from unsloth import FastLanguageModel
     
-    # 모델 설정값 정의
+    #모델 설정값 정의
     max_seq_length = 2048
     dtype = None
     load_in_4bit = True
@@ -283,7 +283,7 @@ https://www.aihub.or.kr/aihubdata/data/view.do?currMenu=115&topMenu=100&aihubDat
     response = tokenizer.batch_decode(outputs)
     print(response[0].split("### Response:")[1])
 
-    # DataSet Loading
+    #DataSet Loading
     
     train_prompt_style = """Below is an instruction that describes a task, paired with an input that provides further context.
     Write a response that appropriately completes the request.
@@ -317,7 +317,7 @@ https://www.aihub.or.kr/aihubdata/data/view.do?currMenu=115&topMenu=100&aihubDat
             "text": texts,
         }
 
-    # Model setup
+    #Model setup
 
     from datasets import load_dataset
     dataset = load_dataset("FreedomIntelligence/medical-o1-reasoning-SFT","en", split = "train[0:700]",trust_remote_code=True)
@@ -348,103 +348,103 @@ https://www.aihub.or.kr/aihubdata/data/view.do?currMenu=115&topMenu=100&aihubDat
     # Train
 
     import os
-import wandb
-from transformers import Trainer, TrainingArguments
-from torch.utils.data import Dataset
+    import wandb
+    from transformers import Trainer, TrainingArguments
+    from torch.utils.data import Dataset
+    
+    #wandb 비활성화
+    os.environ["WANDB_DISABLED"] = "true"
+    wandb.init(mode="disabled")
 
-#wandb 비활성화
-os.environ["WANDB_DISABLED"] = "true"
-wandb.init(mode="disabled")
-
-class CustomDataset(Dataset):
-    def __init__(self, dataset, tokenizer, max_length):
-        self.dataset = dataset
-        self.tokenizer = tokenizer
-        self.max_length = max_length
-
-    def __len__(self):
-        return len(self.dataset)
-
-    def __getitem__(self, idx):
-        item = self.dataset[idx]
-        text = item['text']
-
-        # 토크나이징
-        encodings = self.tokenizer(
-            text,
-            truncation=True,
-            max_length=self.max_length,
-            padding='max_length',
-            return_tensors='pt'
+    class CustomDataset(Dataset):
+        def __init__(self, dataset, tokenizer, max_length):
+            self.dataset = dataset
+            self.tokenizer = tokenizer
+            self.max_length = max_length
+    
+        def __len__(self):
+            return len(self.dataset)
+    
+        def __getitem__(self, idx):
+            item = self.dataset[idx]
+            text = item['text']
+    
+            # 토크나이징
+            encodings = self.tokenizer(
+                text,
+                truncation=True,
+                max_length=self.max_length,
+                padding='max_length',
+                return_tensors='pt'
+            )
+    
+            # labels 추가 (input_ids와 동일하게 설정)
+            return {
+                'input_ids': encodings['input_ids'].squeeze(),
+                'attention_mask': encodings['attention_mask'].squeeze(),
+                'labels': encodings['input_ids'].squeeze()  # labels 추가
+            }
+    
+    processed_dataset = CustomDataset(dataset, tokenizer, max_seq_length)
+    
+        training_args = TrainingArguments(
+            output_dir="outputs",
+            per_device_train_batch_size=2,
+            gradient_accumulation_steps=4,
+            warmup_steps=5,
+            max_steps=60,
+            learning_rate=2e-4,
+            fp16=False,
+            bf16=True,
+            logging_steps=10,
+            optim="adamw_torch",
+            weight_decay=0.01,
+            lr_scheduler_type="linear",
+            seed=3407,
+            report_to="none",
+            remove_unused_columns=False
         )
-
-        # labels 추가 (input_ids와 동일하게 설정)
-        return {
-            'input_ids': encodings['input_ids'].squeeze(),
-            'attention_mask': encodings['attention_mask'].squeeze(),
-            'labels': encodings['input_ids'].squeeze()  # labels 추가
-        }
-
-processed_dataset = CustomDataset(dataset, tokenizer, max_seq_length)
-
-    training_args = TrainingArguments(
-        output_dir="outputs",
-        per_device_train_batch_size=2,
-        gradient_accumulation_steps=4,
-        warmup_steps=5,
-        max_steps=60,
-        learning_rate=2e-4,
-        fp16=False,
-        bf16=True,
-        logging_steps=10,
-        optim="adamw_torch",
-        weight_decay=0.01,
-        lr_scheduler_type="linear",
-        seed=3407,
-        report_to="none",
-        remove_unused_columns=False
-    )
+        
+        trainer = Trainer(
+            model=model,
+            args=training_args,
+            train_dataset=processed_dataset,
+        )
+        
+    trainer.train()
     
-    trainer = Trainer(
-        model=model,
-        args=training_args,
-        train_dataset=processed_dataset,
-    )
+        # After Fine_Turning
     
-trainer.train()
-
-    # After Fine_Turning
-
-    question = "A 55-year-old extremely obese man experiences weakness, sweating, tachycardia, confusion, and headache when fasting for a few hours, which are relieved by eating. What disorder is most likely causing these symptoms?"
-
-
-    FastLanguageModel.for_inference(model)  # Unsloth has 2x faster inference!
-    inputs = tokenizer([prompt_style.format(question, "")], return_tensors="pt").to("cuda")
+        question = "A 55-year-old extremely obese man experiences weakness, sweating, tachycardia, confusion, and headache when fasting for a few hours, which are relieved by eating. What disorder is most likely causing these symptoms?"
     
-    outputs = model.generate(
-        input_ids=inputs.input_ids,
-        attention_mask=inputs.attention_mask,
-        max_new_tokens=1200,
-        use_cache=True,
-    )
-    response = tokenizer.batch_decode(outputs)
-    print(response[0].split("### Response:")[1])
-
-    new_model_local = "<name>"
-    model.save_pretrained(new_model_local)
-    tokenizer.save_pretrained(new_model_local)
     
-    model.save_pretrained_merged(new_model_local, tokenizer, save_method = "merged_16bit",)
-
-    from huggingface_hub import login, create_repo
-    import os
+        FastLanguageModel.for_inference(model)  # Unsloth has 2x faster inference!
+        inputs = tokenizer([prompt_style.format(question, "")], return_tensors="pt").to("cuda")
+        
+        outputs = model.generate(
+            input_ids=inputs.input_ids,
+            attention_mask=inputs.attention_mask,
+            max_new_tokens=1200,
+            use_cache=True,
+        )
+        response = tokenizer.batch_decode(outputs)
+        print(response[0].split("### Response:")[1])
     
-    # 1. 환경변수 설정
-    os.environ["HUGGINGFACE_TOKEN"] = "hf_your_token"
-    login(token=hf_token)  # 토큰으로 로그인
+        new_model_local = "<name>"
+        model.save_pretrained(new_model_local)
+        tokenizer.save_pretrained(new_model_local)
+        
+        model.save_pretrained_merged(new_model_local, tokenizer, save_method = "merged_16bit",)
     
-    # 2. 새 저장소 생성 후 업로드
-    repo_name = "<YOYR_REPO/NAME>"
-    create_repo(repo_name)
-    model.push_to_hub_gguf(repo_name, tokenizer, quantization_method="q4_k_m")
+        from huggingface_hub import login, create_repo
+        import os
+        
+        # 1. 환경변수 설정
+        os.environ["HUGGINGFACE_TOKEN"] = "hf_your_token"
+        login(token=hf_token)  # 토큰으로 로그인
+        
+        # 2. 새 저장소 생성 후 업로드
+        repo_name = "<YOYR_REPO/NAME>"
+        create_repo(repo_name)
+        model.push_to_hub_gguf(repo_name, tokenizer, quantization_method="q4_k_m")
 

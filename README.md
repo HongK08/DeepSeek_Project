@@ -179,4 +179,49 @@ https://www.aihub.or.kr/aihubdata/data/view.do?currMenu=115&topMenu=100&aihubDat
 
 이제 제가 작성한 코드를 보며 기본적인 4bit+디스틸 모델을 사용해서 사용하는 법을 설명하겠습니다.  
 
+1. 기본적인 환경 설정
+    Unsloth 이 부분은 그냥 bash에서 pip install unsloth 하시면 종속성 라이브러리까지 모두 설치됩니다.
+    이후 transformers, wandb 등을 설치하며 llama.cpp는 github 공식 라이브러리 참고하시어 설치하십시오.
+    Huggingface도 마찬가지 입니다. 물론 가장 기초적인 Torch는 서버 설정 메뉴얼 참고하셔야 합니다.
+   
+2. 이후 설정이 되셨다면 HF(HuggingFace) 로그인을 하셔야 합니다. 이때 HF에 가입하시고 개인 토큰 키 발급받으셔야 진행 가능합니다.
+    Token 으로 login 호출하셔서 다음 seq 길이의 지정 dtype 등 지정과 load_in_4bit 은 사용하시는 모델에 따라 지정하십시오.
+    튜닝 전 prompt_style 지정해서 튜닝 전 결과값 보셔도 좋습니다. 이때 지정된 인스트럭션 질문 답변 등 형식을 유지하십시오.
+    그리고 질문을 주면 얘가 답변을 해 줄겁니다 기본적인 LLM 내에서 정제 된 R1이 주는 답변입니다.
+    이후 Train 후에 나올 Prompt의 양식도 상단과 같이 지정해야 합니다 이는 사용 할 모델의 구조와 학습 데이터셋을 고려하십시오.
+
+3. 데이터 셋의 처리 준비
+    이제 상단에서 지정한 프롬프트 스타일을 formatting_prompts_func() 라는 항목에서 전부 지정해 주어야만 합니다.  
+    이곳에서 기본적인 구조를 정의하시고 난 다음에야 저희는 데이터셋을 불러오고 그 내부의 헤더값을 사용하여 학습을 시킬겁니다. (peft 사용함)  
+    그러면 이제 원하는 데이터셋의 구조를 모두 파악하였다는 가정 하에 학습을 진행 해 보도록 하겠습니다.  
+    from dataset import load_dataset을 하여 HF상에 있는 DataSet을 사용한다고 생각하시면 됩니다  
+        1. 가져 올 데이터셋의 직접 주소 또는 HF 라이브러리 명 + 데이터 셋 이름  
+        2. dataset.ap을 지정해주는대 이때 그 값은 위에서 정의한 formatting_prompt_func 을 쓰게 되는겁니다.  
+        3. dataset에서 꺼내 쓸 것 즉 첫 읽는 위치를 지정하면 끝납니다  
+    이제 wandb를 비활성화(학습에 지장을 줌) 을 환경변수에 ~/.bashrc에 지정하시던지 코드내에서 하드지정 꼭 하십시오 중요합니다.  
+    그리고 클래스 아래에 생성자 만드셔서 전부 하나하나 지정해 주어야 합니다 이는 코드 참고하시면 좋습니다.  
+    그리고 토크나이징 후에 return으로 반환까지 해주면 정리가 됩니다.  
+
+4. Train  
+    설정이 모두 완료되었으니 이제 학습을 시킬 차례입니다.
+    여기서 bach_size/gradient 등 값을 모두 원하는대로 지정하셔야 하는데 이때 이 값은 현재 Server의 GPU V-RAM 용량을 고려하시며 지정하십시오.  
+    간단하게 이 값이 높아질수록 GPU의 사용율이 높아짐과 동시에 Train에서 Epoch에도 영향을 주게 됩니다.  
+    그리고 learnig_rate= 값도 본인이 고려햐여 지정, 연산 방식은 bf16/fp16이 있는데 구형 GPU는 fp16만 지원하나 Server의 4090은 bf16을 지원합니다.  
+    그리고 그 외의 값은 구글링을 통하여 왜 이렇게 되고 어떤 방식이 내 모델에 적합한가를 생각하시고 Seed값은 랜덤으로 두시던지 자유입니다.  
+
+    이후 trainer 호출해서 돌려주면 됩니다.  
+    그럼 당연히 나온 모델이 바뀐 값을 잘 추론해주는가? 이걸 확인하고 싶으실겁니다.  
+    마찬가지로 상단의 지정하신 prompt 를 그대로 사용하시며 인스트럭션은 Dataset 제공자의 권장사항을 따르는 것이 좋습니다.  
+    그리고 이때 아웃풋이나 인덱스값은 당연히 받고싶은 prompt 에 맞게 지정하셔야 하며 to("cuda") 지정하시어 사용하십시오  
+
+    
+    그 이후 로컬에 quant 하시어 저장하시거나 HF에 create_repo/repo_name 지정하시어 push 하시면 기본적인 파인튜닝이 끝나게 됩니다.
+    
+        new_model_local = "<name>"
+        model.save_pretrained(new_model_local)
+        tokenizer.save_pretrained(new_model_local)
+        
+        model.save_pretrained_merged(new_model_local, tokenizer, save_method = "merged_16bit",) 
+        model.push.to.hub_gguf(repo.name,tokenizer, quantization_method="<llama.cpp 문서 참조하여 기입>")  
+
 

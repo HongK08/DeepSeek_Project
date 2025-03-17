@@ -56,7 +56,7 @@ factorial(0)을 호출한다.
 이를 이용해, factorial(3) = 3 * 2 = 6이 된다.
 이를 통하여 모델이 코드의 구문에 얽매이지 않은 채 논리적 흐름 계획, 상태 공간 탐색,의사 결정 트리 순회, 모듈식 분해 등의 범용 추론 능력을 학습이 가능하게 함.
 
-############################
+그래프로 보자
         ROOT
          |
        [x < 5]
@@ -67,7 +67,6 @@ factorial(0)을 호출한다.
  /    \      /    \
 A      B    C      D
 
-############################
 DFS/BFS 같은 순회
 Root → Left → Left (A) → Backtrack → Right (B) → Backtrack → Right (C) → Right (D)
 Root → Left → Right → Left Child (A, B) → Right Child (C, D)

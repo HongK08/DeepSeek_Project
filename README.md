@@ -5,10 +5,13 @@
 2. 기본적으로 사용하는 Unsloth과 그에 딸려오는 Transformer 등 프로그램이 사용하는 CUDA의 원리를 이해하고 시작하여야 함
 3. 사용하게 되는 Model 은 DeepSeek-R1-Distill-Qwen-32B-unsloth-bnb-4bit 이며 해당 모델은 R1의 증류 모델이고 32B이며 4Bit 양자화가 된 모델이라는 뜻임
 
+
+#참조한 논문
+https://arxiv.org/pdf/2502.07316
+
 # DeepSeek R1 정리
 DeepSeek의 추론엔진  
 
-https://arxiv.org/pdf/2502.07316
 흔히 아는 LLM의 추론 방식은 총 두가지 입니다. <br/>
 수학문제 데이터 : 문제를 주고 이를 수학적으로 추론해가며 과정을 학습하기 <br/>
 Chain-of-Thought 데이터 : 사람 생각처럼 해결하는데 이를 문장 설명함 을 학습함

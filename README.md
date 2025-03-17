@@ -171,3 +171,5 @@ LLM을 학습시키는 방법은 지도학습/보강학습/보상학습 등의 �
 
 해당 코드를 사용하기 전에 우선 AI허브에서 원하는 번역 파일을 다운 받아야만 합니다. <br/><br/>
 https://www.aihub.or.kr/aihubdata/data/view.do?currMenu=115&topMenu=100&aihubDataSe=data&dataSetSn=126 <br/>
+
+이후에 해당 데이터의 헤더값을 찿아서 코드에 넣고 지정해주면서 학습을 시키면 됩니다 이는 모든 데이터셋 학습 방법과 상기 동일합니다.

@@ -10,6 +10,7 @@
 
 # 참조한 논문
 https://arxiv.org/pdf/2502.07316
+https://arxiv.org/html/2412.19437v1#S3
 
 # DeepSeek R1 정리
 DeepSeek의 추론엔진  

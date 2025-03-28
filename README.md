@@ -448,3 +448,124 @@ https://www.aihub.or.kr/aihubdata/data/view.do?currMenu=115&topMenu=100&aihubDat
         create_repo(repo_name)
         model.push_to_hub_gguf(repo_name, tokenizer, quantization_method="q4_k_m")
 
+# 이렇게 하여 1차 튜닝을 완료합니다.
+    
+Q4로 저장했으나 저희는 이후 값 비교를 위해 한국어 데이터 셋을 추가적으로 학습시킬 예정입니다
+
+
+    from numba import cuda
+    from datasets import load_dataset
+    from transformers import Trainer, TrainingArguments
+    from torch.utils.data import Dataset
+    from huggingface_hub import login
+    from unsloth import FastLanguageModel
+    import os
+    import wandb
+    
+    # CUDA 리셋 (메모리 초기화)
+    device = cuda.get_current_device()
+    device.reset()
+    
+    # Hugging Face 로그인
+    hf_token = "your_huggingface_token"
+    login(token=hf_token)
+    
+    # 모델 설정
+    max_seq_length = 2048
+    dtype = None
+    load_in_4bit = True
+    
+    # 모델 로드
+    model, tokenizer = FastLanguageModel.from_pretrained(
+        model_name="unsloth/DeepSeek-R1-Distill-Qwen-14B-unsloth-bnb-4bit",
+        max_seq_length=max_seq_length,
+        dtype=dtype,
+        load_in_4bit=load_in_4bit,
+        token=None
+    )
+    print("모델 로딩 완료!")
+    
+    # 데이터셋 로딩
+    dataset = load_dataset("MarkrAI/KoCommercial-Dataset", split="train")
+    print("데이터셋 로딩 완료!")
+    
+    # 데이터셋 변환 함수
+    def format_data(example):
+        instruction = example.get("instruction", "다음 광고 문구를 분석하세요.")
+        input_text = example.get("input", "")
+        output_text = example.get("output", example.get("text", ""))  # 'text' 필드도 고려
+    
+        return {
+            "text": f"### Instruction:\n{instruction}\n\n### Input:\n{input_text}\n\n### Response:\n{output_text}"
+        }
+    
+    # 데이터 변환 적용
+    formatted_dataset = dataset.map(format_data)
+    
+    # 데이터셋 클래스 정의
+    class CustomDataset(Dataset):
+        def __init__(self, dataset, tokenizer, max_length):
+            self.dataset = dataset
+            self.tokenizer = tokenizer
+            self.max_length = max_length
+    
+        def __len__(self):
+            return len(self.dataset)
+    
+        def __getitem__(self, idx):
+            item = self.dataset[idx]
+            text = item['text']
+    
+            encodings = self.tokenizer(
+                text,
+                truncation=True,
+                max_length=self.max_length,
+                padding='max_length',
+                return_tensors='pt'
+            )
+    
+            return {
+                'input_ids': encodings['input_ids'].squeeze(),
+                'attention_mask': encodings['attention_mask'].squeeze(),
+                'labels': encodings['input_ids'].squeeze()
+            }
+    
+    # 변환된 데이터셋을 CustomDataset으로 처리
+    processed_dataset = CustomDataset(formatted_dataset, tokenizer, max_seq_length)
+    
+    # 훈련 설정
+    training_args = TrainingArguments(
+        output_dir="outputs",
+        per_device_train_batch_size=1,
+        gradient_accumulation_steps=4,
+        warmup_steps=10,
+        max_steps=1000,
+        learning_rate=2e-5,
+        fp16=False,
+        logging_steps=10,
+        optim="adamw_torch",
+        weight_decay=0.01,
+        lr_scheduler_type="linear",
+        seed=3407,
+        report_to="none",
+        remove_unused_columns=False,
+    )
+    
+    # wandb 비활성화
+    os.environ["WANDB_DISABLED"] = "true"
+    wandb.init(mode="disabled")
+    
+    # 트레이너 설정
+    trainer = Trainer(
+        model=model,
+        args=training_args,
+        train_dataset=processed_dataset,
+    )
+    
+    # 훈련 시작
+    trainer.train()
+    
+    # 훈련 완료 후 모델 저장
+    model.push_to_hub("HongKi08/Korean-Qwen14B", tokenizer, quantization_method="q4_k_m")
+    print("모델 업로드 완료!")
+

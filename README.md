@@ -569,3 +569,13 @@ Q4로 저장했으나 저희는 이후 값 비교를 위해 한국어 데이터 
     model.push_to_hub("HongKi08/Korean-Qwen14B", tokenizer, quantization_method="q4_k_m")
     print("모델 업로드 완료!")
 
+이 떄 양자화 조건이라던가 그런 구문은 상황에 맞게 변경하여 로컬에 저장하던 업로드하던 개인의 선택입니다.
+
+    repo_name = "HongKi08/SanHak"
+    model.push_to_hub(repo_name)
+    tokenizer.push_to_hub(repo_name)
+
+학습 -> 다시 불러옴 -> 학습 의 과정을 진행하고 싶다면 이런식으로 Transformer 가 사용 가능하도록 지정하여 push 해줍니다.
+
+이 과정을 반복하면서 각 학습 진행도에 따른 벤치마크의 결과를 보도록 하겠습니다.
+

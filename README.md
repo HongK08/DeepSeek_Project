@@ -575,6 +575,79 @@ Q4로 저장했으나 저희는 이후 값 비교를 위해 한국어 데이터 
     model.push_to_hub(repo_name)
     tokenizer.push_to_hub(repo_name)
 
+
+
+
+
+
+#
+    import os
+from transformers import AutoModelForCausalLM, AutoTokenizer
+from peft import PeftModel
+from huggingface_hub import HfApi, login
+import subprocess
+import shutil
+
+# Hugging Face 로그인
+hf_token = "hf_..."  # 너의 토큰으로 바꿔줘
+login(hf_token)
+
+# 설정
+base_model_id = "deepseek-ai/DeepSeek-R1-Distill-Qwen-14B"
+lora_model_id = "HongKi08/14B_KOR_MED_VAL"
+merged_dir = "./merged_14b_kor_med"
+gguf_dir = "./gguf_model"
+repo_id_transformers = "HongKi08/14B_KOR_MED_MERGED"
+repo_id_gguf = "HongKi08/14B_KOR_MED_GGUF"
+
+# 1. 병합
+print("▶️ 병합 중...")
+base_model = AutoModelForCausalLM.from_pretrained(
+    base_model_id, device_map="auto", torch_dtype="auto"
+)
+model = PeftModel.from_pretrained(base_model, lora_model_id)
+merged_model = model.merge_and_unload()
+
+# 2. 저장
+print("💾 저장 중...")
+tokenizer = AutoTokenizer.from_pretrained(lora_model_id)
+merged_model.save_pretrained(merged_dir)
+tokenizer.save_pretrained(merged_dir)
+
+# 3. Hugging Face에 업로드 (transformers format)
+print("⬆️ Hugging Face 업로드 중 (transformers)...")
+api = HfApi()
+api.create_repo(repo_id_transformers, exist_ok=True)
+merged_model.push_to_hub(repo_id_transformers)
+tokenizer.push_to_hub(repo_id_transformers)
+
+# 4. GGUF 변환 (llama.cpp 사용)
+print("🔁 GGUF 변환 중...")
+gguf_script = "./llama.cpp/convert.py"
+if not os.path.exists("llama.cpp"):
+    subprocess.run(["git", "clone", "https://github.com/ggerganov/llama.cpp.git"])
+
+subprocess.run([
+    "python3", gguf_script,
+    merged_dir,
+    "--outfile", f"{gguf_dir}/model.gguf"
+])
+
+# tokenizer도 복사
+shutil.copytree(os.path.join(merged_dir, "tokenizer_config.json"), os.path.join(gguf_dir, "tokenizer_config.json"), dirs_exist_ok=True)
+
+# 5. Hugging Face에 업로드 (gguf)
+print("⬆️ Hugging Face 업로드 중 (GGUF)...")
+api.create_repo(repo_id_gguf, exist_ok=True)
+api.upload_folder(
+    folder_path=gguf_dir,
+    repo_id=repo_id_gguf,
+    repo_type="model"
+)
+
+print("✅ 모든 과정 완료!")
+
+
 학습 -> 다시 불러옴 -> 학습 의 과정을 진행하고 싶다면 이런식으로 Transformer 가 사용 가능하도록 지정하여 push 해줍니다.
 
 이 과정을 반복하면서 각 학습 진행도에 따른 벤치마크의 결과를 보도록 하겠습니다.
